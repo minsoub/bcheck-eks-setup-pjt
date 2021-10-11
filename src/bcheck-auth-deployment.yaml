@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bcheck-auth
+  namespace: bcheck-ns
+  labels:
+    app: bcheck-auth
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: bcheck-auth
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: bcheck-auth
+    spec:
+      containers:
+        - name: bcheck-auth
+          image: AWS_ECR_URI
+          ports:
+            - containerPort: 7070
+          resources: {}

@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bcheck-gateway-ts
+  namespace: bcheck-ns
+  labels:
+    app: bcheck-gateway-ts
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: bcheck-gateway-ts
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: bcheck-gateway-ts
+    spec:
+      containers:
+        - name: bcheck-gateway-ts
+          image: AWS_ECR_URI
+          ports:
+            - containerPort: 8000
+          resources: {}

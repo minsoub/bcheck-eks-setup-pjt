@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bcheck-web
+  namespace: bcheck-ns
+  labels:
+    app: bcheck-web
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: bcheck-web
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: bcheck-web
+    spec:
+      containers:
+        - name: bcheck-web
+          image: 160270626841.dkr.ecr.ap-northeast-2.amazonaws.com/bcheck-web:latest
+          ports:
+            - containerPort: 80
+          resources: {}

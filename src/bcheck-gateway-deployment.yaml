@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bcheck-gateway-api
+  namespace: bcheck-ns
+  labels:
+    app: bcheck-gateway-api
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: bcheck-gateway-api
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: bcheck-gateway-api
+    spec:
+      containers:
+        - name: bcheck-gateway-api
+          image: 160270626841.dkr.ecr.ap-northeast-2.amazonaws.com/bcheck-gateway-api:d54adb6
+          ports:
+            - containerPort: 8080
+          resources: {}

@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bcheck-api
+  namespace: bcheck-ns
+  labels:
+    app: bcheck-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: bcheck-api
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: bcheck-api
+    spec:
+      containers:
+        - name: bcheck-api
+          image: 160270626841.dkr.ecr.ap-northeast-2.amazonaws.com/bcheck-api:c5946bd
+          ports:
+            - containerPort: 7777
+          resources:
+            requests:
+              memory: "1024Mi"
+              cpu: "512m"
+            limits:
+              memory: "4098Mi"
+              cpu: "1024m"
