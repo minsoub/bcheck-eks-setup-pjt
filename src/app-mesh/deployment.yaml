@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: bcheck-mesh-ns
+  name: bcheck-gatewayserver
+  labels:
+    app: bcheck-gatewayserver
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8000
+  selector:
+    app: bcheck-gatewayserver
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: bcheck-mesh-ns
+  name: bcheck-gatewayserver
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: bcheck-gatewayserver
+  template:
+    metadata:
+      labels:
+        app: bcheck-gatewayserver
+    spec:
+      serviceAccountName: bcheck-service
+      containers:
+        - name: bcheck-gateway-ts
+          image: 160270626841.dkr.ecr.ap-northeast-2.amazonaws.com/bcheck-gateway-ts:latest
+          ports:
+            - containerPort: 8000
+          resources:
+            requests:
+              memory: "1024Mi"
+              cpu: "512m"
+            limits:
+              memory: "4098Mi"
+              cpu: "1024m"
+          readinessProbe:
+            httpGet:
+              path: /api-docs
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+---

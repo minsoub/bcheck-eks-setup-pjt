@@ -1,0 +1,29 @@
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: bcheck-api-server
+  namespace: bcheck-mesh-ns
+spec:
+  awsName: bcheck-api-server-virtual-node
+  podSelector:
+    matchLabels:
+      app: bcheck-api-server
+  listeners:
+    - portMapping:
+        port: 7777
+        protocol: tcp
+  serviceDiscovery:
+    dns:
+      hostname: bcheck-api-server.bcheck-mesh-ns.svc.cluster.local
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualService
+metadata:
+  name: bcheck-api-server
+  namespace: bcheck-mesh-ns
+spec:
+  awsName: bcheck-api-server
+  provider:
+    virtualNode:
+      virtualNodeRef:
+        name: bcheck-api-server

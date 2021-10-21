@@ -1,0 +1,67 @@
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: bcheck-gatewayserver
+  namespace: bcheck-mesh-ns
+spec:
+  awsName: bcheck-gatewayserver-virtual-node
+  podSelector:
+    matchLabels:
+      app: bcheck-gatewayserver
+  listeners:
+    - portMapping:
+        port: 8000
+        protocol: http
+  serviceDiscovery:
+    dns:
+      hostname: bcheck-gatewayserver.bcheck-mesh-ns.svc.cluster.local
+  backends:
+    - virtualService:
+        virtualServiceRef:
+          name: bcheck-auth-server
+    - virtualService:
+        virtualServiceRef:
+          name: bcheck-api-server
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualRouter
+metadata:
+  namespace: bcheck-mesh-ns
+  name: bcheck-gatewayserver
+spec:
+  awsName: bcheck-gatewayserver-virtual-router
+  listeners:
+    - portMapping:
+        port: 8000
+        protocol: http
+  routes:
+    - name: route-to-bcheck-gatewayserver
+      httpRoute:
+        match:
+          prefix: /
+        action:
+          weightedTargets:
+            - virtualNodeRef:
+                name: bcheck-gatewayserver
+              weight: 1
+        retryPolicy:
+          maxRetries: 2
+          perRetryTimeout:
+            unit: ms
+            value: 2000
+          httpRetryEvents:
+            - server-error
+            - client-error
+            - gateway-error
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualService
+metadata:
+  name: bcheck-gatewayserver
+  namespace: bcheck-mesh-ns
+spec:
+  awsName: bcheck-gatewayserver
+  provider:
+    virtualRouter:
+      virtualRouterRef:
+        name: bcheck-gatewayserver

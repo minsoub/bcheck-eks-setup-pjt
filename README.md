@@ -755,7 +755,7 @@ minsoub@DESKTOP-CQM34B1:/mnt/c/DevPJT/bcheck-eks-setup-pjt$ aws iam list-roles -
 - AWS EKS Fargate 서비스를 통해서 BCheck-Gateway 서비스와 AWS NLB 테스트를 구성한다. 
 - Deployment를 통해서 application을 배포한다. 
 - bcheck-gateway-deployment.yaml
-  ```json
+  ```yaml
   apiVersion: apps/v1
   kind: Deployment
   metadata:
@@ -1973,4 +1973,509 @@ $ aws configure list
 [ec2-user@ip-10-100-0-124 ~]$ aws eks --region ap-northeast-2 update-kubeconfig --name bcheck-eks-cluster
 Added new context arn:aws:eks:ap-northeast-2:160270626841:cluster/bcheck-eks-cluster to /home/ec2-user/.kube/config
 [ec2-user@ip-10-100-0-124 ~]$
+```
+```shell
+histui-MacBookPro:aws-app-mesh-examples hist$ curl -o controller-iam-policy.json https://raw.githubusercontent.com/aws/aws-app-mesh-controller-for-k8s/master/config/iam/controller-iam-policy.json
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  2753  100  2753    0     0   4261      0 --:--:-- --:--:-- --:--:--  4261
+histui-MacBookPro:aws-app-mesh-examples hist$ cat controller-iam-policy.json 
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "appmesh:ListVirtualRouters",
+                "appmesh:ListVirtualServices",
+                "appmesh:ListRoutes",
+                "appmesh:ListGatewayRoutes",
+                "appmesh:ListMeshes",
+                "appmesh:ListVirtualNodes",
+                "appmesh:ListVirtualGateways",
+                "appmesh:DescribeMesh",
+                "appmesh:DescribeVirtualRouter",
+                "appmesh:DescribeRoute",
+                "appmesh:DescribeVirtualNode",
+                "appmesh:DescribeVirtualGateway",
+                "appmesh:DescribeGatewayRoute",
+                "appmesh:DescribeVirtualService",
+                "appmesh:CreateMesh",
+                "appmesh:CreateVirtualRouter",
+                "appmesh:CreateVirtualGateway",
+                "appmesh:CreateVirtualService",
+                "appmesh:CreateGatewayRoute",
+                "appmesh:CreateRoute",
+                "appmesh:CreateVirtualNode",
+                "appmesh:UpdateMesh",
+                "appmesh:UpdateRoute",
+                "appmesh:UpdateVirtualGateway",
+                "appmesh:UpdateVirtualRouter",
+                "appmesh:UpdateGatewayRoute",
+                "appmesh:UpdateVirtualService",
+                "appmesh:UpdateVirtualNode",
+                "appmesh:DeleteMesh",
+                "appmesh:DeleteRoute",
+                "appmesh:DeleteVirtualRouter",
+                "appmesh:DeleteGatewayRoute",
+                "appmesh:DeleteVirtualService",
+                "appmesh:DeleteVirtualNode",
+                "appmesh:DeleteVirtualGateway"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "iam:CreateServiceLinkedRole"
+            ],
+            "Resource": "arn:aws:iam::*:role/aws-service-role/appmesh.amazonaws.com/AWSServiceRoleForAppMesh",
+            "Condition": {
+                "StringLike": {
+                    "iam:AWSServiceName": [
+                        "appmesh.amazonaws.com"
+                    ]
+                }
+            }
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "acm:ListCertificates",
+                "acm:DescribeCertificate",
+                "acm-pca:DescribeCertificateAuthority",
+                "acm-pca:ListCertificateAuthorities"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "servicediscovery:CreateService",
+                "servicediscovery:DeleteService",
+                "servicediscovery:GetService",
+                "servicediscovery:GetInstance",
+                "servicediscovery:RegisterInstance",
+                "servicediscovery:DeregisterInstance",
+                "servicediscovery:ListInstances",
+                "servicediscovery:ListNamespaces",
+                "servicediscovery:ListServices",
+                "servicediscovery:GetInstancesHealthStatus",
+                "servicediscovery:UpdateInstanceCustomHealthStatus",
+                "servicediscovery:GetOperation",
+                "route53:GetHealthCheck",
+                "route53:CreateHealthCheck",
+                "route53:UpdateHealthCheck",
+                "route53:ChangeResourceRecordSets",
+                "route53:DeleteHealthCheck"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
+histui-MacBookPro:aws-app-mesh-examples hist$ aws configure list
+      Name                    Value             Type    Location
+      ----                    -----             ----    --------
+   profile                <not set>             None    None
+access_key     ****************VAHB shared-credentials-file    
+secret_key     ****************Orvs shared-credentials-file    
+    region           ap-northeast-2      config-file    ~/.aws/config
+    
+```
+### APP Mesh 적용 
+appmesh-system 네임스페이스 내의 fargateprofile  생성   
+```shell
+histui-MacBookPro:DevWorkspace hist$ eksctl create fargateprofile --name bcheck-eks-cluster-appmesh-profile --cluster bcheck-eks-cluster --namespace appmesh-system
+2021-10-18 09:37:15 [ℹ]  eksctl version 0.69.0
+2021-10-18 09:37:15 [ℹ]  using region ap-northeast-2
+2021-10-18 09:37:16 [ℹ]  deploying stack "bcheck-eks-cluster-appmesh-profile"
+2021-10-18 09:37:16 [ℹ]  waiting for CloudFormation stack "bcheck-eks-cluster-appmesh-profile"
+2021-10-18 09:37:32 [ℹ]  waiting for CloudFormation stack "bcheck-eks-cluster-appmesh-profile"
+2021-10-18 09:37:49 [ℹ]  waiting for CloudFormation stack "bcheck-eks-cluster-appmesh-profile"
+2021-10-18 09:37:50 [ℹ]  creating Fargate profile "fp-979374c9" on EKS cluster "bcheck-eks-cluster"
+2021-10-18 09:38:07 [ℹ]  created Fargate profile "fp-979374c9" on EKS cluster "bcheck-eks-cluster"
+```
+Enable IAM OIDC provider
+```shell
+histui-MacBookPro:DevWorkspace hist$ eksctl utils associate-iam-oidc-provider --region=ap-northeast-2 --cluster=bcheck-eks-cluster --approve
+2021-10-18 09:40:37 [ℹ]  eksctl version 0.69.0
+2021-10-18 09:40:37 [ℹ]  using region ap-northeast-2
+2021-10-18 09:40:38 [ℹ]  IAM Open ID Connect provider is already associated with cluster "bcheck-eks-cluster" in "ap-northeast-2"
+```
+Download the IAM policy for AWS App Mesh Kubernetes Controller
+```shell
+histui-MacBookPro:src hist$ curl -o controller-iam-policy.json https://raw.githubusercontent.com/aws/aws-app-mesh-controller-for-k8s/master/config/iam/controller-iam-policy.json
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  2753  100  2753    0     0   4146      0 --:--:-- --:--:-- --:--:--  4139
+```
+
+```shell
+histui-MacBookPro:aws-app-mesh-examples hist$ aws iam create-policy --policy-name AWSAppMeshK8sControllerIAMPolicy --policy-document file://controller-iam-policy.json
+{
+    "Policy": {
+        "PolicyName": "AWSAppMeshK8sControllerIAMPolicy",
+        "PolicyId": "ANPASKUG7WAMROSQPRCUI",
+        "Arn": "arn:aws:iam::160270626841:policy/AWSAppMeshK8sControllerIAMPolicy",
+        "Path": "/",
+        "DefaultVersionId": "v1",
+        "AttachmentCount": 0,
+        "PermissionsBoundaryUsageCount": 0,
+        "IsAttachable": true,
+        "CreateDate": "2021-10-15T08:19:44+00:00",
+        "UpdateDate": "2021-10-15T08:19:44+00:00"
+    }
+}
+
+arn:aws:iam::aws:policy/AWSAppMeshEnvoyAccess
+envoy가 외부통신 및 appmesh의 appmesh:StreamAggregatedResources 권한을 주기 위해서 아래의 iam 계정을 생성해야 한다. 
+해당 생성된 계정은 deployment에 계정의 연결해야 한다. 
+
+eksctl create iamserviceaccount --cluster bcheck-app-mesh-cluster \
+       --namespace bcheck-mesh-ns \
+       --name bcheck-service \
+       --attach-policy-arn arn:aws:iam::aws:policy/AWSAppMeshEnvoyAccess \
+       --override-existing-serviceaccounts \
+       --approve
+
+histui-MacBookPro:aws-app-mesh-examples hist$ eksctl create iamserviceaccount --cluster bcheck-eks-cluster \
+       --namespace appmesh-system \
+       --name appmesh-controller \
+       --attach-policy-arn arn:aws:iam::160270626841:policy/AWSAppMeshK8sControllerIAMPolicy \
+       --override-existing-serviceaccounts \
+       --approve
+# if you need the iamserviceaccount delete 
+histui-MacBookPro:src hist$ eksctl delete iamserviceaccount --cluster bcheck-eks-cluster --name appmesh-controller --namespace appmesh-system    
+histui-MacBookPro:src hist$ helm upgrade -i appmesh-controller eks/appmesh-controller \
+    --namespace appmesh-system \
+    --set region=ap-northeast-2 \
+    --set serviceAccount.create=false \
+    --set serviceAccount.name=appmesh-controller
+# if an error occurs (Unable to continue with install: ServiceAccount "appmesh-controller" in namespace "appmesh-system" exists and cannot...)
+# so you have to the command follow.
+histui-MacBookPro:src hist$ kubectl delete sa appmesh-controller -n appmesh-system
+serviceaccount "appmesh-controller" deleted
+
+# if an error occurs, check the error with the command below.
+histui-MacBookPro:src hist$ kubectl get pods -n appmesh-system
+NAME                                 READY   STATUS             RESTARTS   AGE
+appmesh-controller-57f64997d-rltnn   0/1     CrashLoopBackOff   5          6m39s
+histui-MacBookPro:src hist$ kubectl describe pod appmesh-controller-57f64997d-rltnn -n appmesh-system
+Events:
+  Type     Reason           Age                    From               Message
+  ----     ------           ----                   ----               -------
+  Warning  LoggingDisabled  6m41s                  fargate-scheduler  Disabled logging because aws-logging configmap was not found. configmap "aws-logging" not found
+  Normal   Scheduled        4m52s                  fargate-scheduler  Successfully assigned appmesh-system/appmesh-controller-57f64997d-rltnn to fargate-ip-10-100-31-206.ap-northeast-2.compute.internal
+  Normal   Pulling          4m52s                  kubelet            Pulling image "602401143452.dkr.ecr.us-west-2.amazonaws.com/amazon/appmesh-controller:v1.4.1"
+  Normal   Pulled           4m39s                  kubelet            Successfully pulled image "602401143452.dkr.ecr.us-west-2.amazonaws.com/amazon/appmesh-controller:v1.4.1" in 12.964383736s
+  Warning  BackOff          2m44s (x9 over 4m22s)  kubelet            Back-off restarting failed container
+  Normal   Created          2m29s (x5 over 4m38s)  kubelet            Created container controller
+  Normal   Started          2m29s (x5 over 4m38s)  kubelet            Started container controller
+  Normal   Pulled           2m29s (x4 over 4m30s)  kubelet            Container image "602401143452.dkr.ecr.us-west-2.amazonaws.com/amazon/appmesh-controller:v1.4.1" already present on machine
+# configmap에 aws-logging을 생성해야 한다. 
+```
+aws-logging-cloudwatch-configmap.yaml
+```yaml
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: aws-logging
+  namespace: appmesh-system
+  labels:
+data:
+  output.conf: |
+    [OUTPUT]
+        Name cloudwatch_logs
+        Match   *
+        region ap-northeast-2
+        log_group_name fluent-bit-cloudwatch
+        log_stream_prefix from-fluent-bit-
+        auto_create_group true
+```
+Cloudwatch를 위한 IAM 정책을 위한 Role 가져오기 
+```shell
+histui-MacBookPro:src hist$ curl -o permissions.json https://raw.githubusercontent.com/aws-samples/amazon-eks-fluent-logging-examples/mainline/examples/fargate/cloudwatchlogs/permissions.json
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100   215  100   215    0     0    339      0 --:--:-- --:--:-- --:--:--   339
+```
+IAM 정책 생성 
+```shell
+histui-MacBookPro:src hist$ aws iam create-policy --policy-name eks-fargate-logging-policy --policy-document file://permissions.json
+{
+    "Policy": {
+        "PolicyName": "eks-fargate-logging-policy",
+        "PolicyId": "ANPASKUG7WAMSG4XGWGGF",
+        "Arn": "arn:aws:iam::160270626841:policy/eks-fargate-logging-policy",
+        "Path": "/",
+        "DefaultVersionId": "v1",
+        "AttachmentCount": 0,
+        "PermissionsBoundaryUsageCount": 0,
+        "IsAttachable": true,
+        "CreateDate": "2021-10-18T02:07:02+00:00",
+        "UpdateDate": "2021-10-18T02:07:02+00:00"
+    }
+}
+```
+IAM 정책을 Fargate 프로필에 지정된 포드 실행 역할에 연결한다.
+```shell
+histui-MacBookPro:src hist$ aws iam attach-role-policy \
+    --policy-arn arn:aws:iam::160270626841:policy/eks-fargate-logging-policy \
+    --role-name eks-bcheck-cluster-role
+```
+```shell
+histui-MacBookPro:aws-app-mesh-examples hist$ kubectl get crds | grep appmesh
+gatewayroutes.appmesh.k8s.aws                2021-10-15T07:39:56Z
+meshes.appmesh.k8s.aws                       2021-10-15T07:39:56Z
+virtualgateways.appmesh.k8s.aws              2021-10-15T07:39:56Z
+virtualnodes.appmesh.k8s.aws                 2021-10-15T07:39:56Z
+virtualrouters.appmesh.k8s.aws               2021-10-15T07:39:56Z
+virtualservices.appmesh.k8s.aws              2021-10-15T07:39:56Z
+histui-MacBookPro:src hist$ kubectl get deployment appmesh-controller -n appmesh-system
+NAME                 READY   UP-TO-DATE   AVAILABLE   AGE
+appmesh-controller   1/1     1            1           23m
+histui-MacBookPro:src hist$ kubectl -n appmesh-system get all
+NAME                                      READY   STATUS    RESTARTS   AGE
+pod/appmesh-controller-544b86b45d-cwsls   1/1     Running   0          24m
+
+NAME                                         TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE
+service/appmesh-controller-webhook-service   ClusterIP   172.20.220.76   <none>        443/TCP   24m
+
+NAME                                 READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/appmesh-controller   1/1     1            1           24m
+
+NAME                                            DESIRED   CURRENT   READY   AGE
+replicaset.apps/appmesh-controller-544b86b45d   1         1         1       24m
+```
+#### 설치 오류시 초기화 하기 (삭제)
+```shell
+histui-MacBookPro:DevWorkspace hist$ helm delete appmesh-controller -n appmesh-system
+release "appmesh-controller" uninstalled
+```
+#### App Mesh 컴포넌트 등록
+Application에 mesh를 적용하려면 각각의 서비스들을 추상화하는 app mesh 컴포넌트들을 먼저 생성해야 한다. (네임스페이스 포함 생성)
+```yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: bcheck-mesh-ns
+  labels:
+    mesh: bcheck-mesh
+    gateway: ingress-gw
+    appmesh.k8s.aws/sidecarInjectorWebhook: enabled
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: Mesh
+metadata:
+  name: bcheck-mesh
+spec:
+  namespaceSelector:
+    matchLabels:
+      mesh: bcheck-mesh
+```
+```shell
+histui-MacBookPro:app-mesh hist$ kubectl apply -f create-mesh.yaml
+mesh.appmesh.k8s.aws/bcheck-mesh created
+```
+생성된 레이블 확인
+```shell
+histui-MacBookPro:app-mesh hist$  kubectl get namespaces --show-labels
+NAME              STATUS   AGE     LABELS
+appmesh-system    Active   2d22h   kubernetes.io/metadata.name=appmesh-system
+bcheck-mesh-ns    Active   52s     appmesh.k8s.aws/sidecarInjectorWebhook=enabled,gateway=ingress-gw,kubernetes.io/metadata.name=bcheck-mesh-ns,mesh=bcheck-mesh
+bcheck-ns         Active   51d     kubernetes.io/metadata.name=bcheck-ns
+default           Active   52d     kubernetes.io/metadata.name=default
+kube-node-lease   Active   52d     kubernetes.io/metadata.name=kube-node-lease
+kube-public       Active   52d     kubernetes.io/metadata.name=kube-public
+kube-system       Active   52d     kubernetes.io/metadata.name=kube-system
+```
+#### bcheck-mesh-ns 네임스페이스의 Fargateprofile 생성 
+appmesh-system 네임스페이스 내의 fargateprofile  생성
+```shell
+histui-MacBookPro:app-mesh hist$ eksctl create fargateprofile --name bcheck-eks-cluster-mesh-fargate --cluster bcheck-eks-cluster --namespace bcheck-mesh-ns
+2021-10-18 15:28:31 [ℹ]  eksctl version 0.69.0
+2021-10-18 15:28:31 [ℹ]  using region ap-northeast-2
+2021-10-18 15:28:32 [!]  retryable error (Throttling: Rate exceeded
+        status code: 400, request id: bff948e6-5d2f-464a-9022-aea5790faf9f) from cloudformation/DescribeStacks - will retry after delay of 6.749124876s
+2021-10-18 15:28:39 [ℹ]  creating Fargate profile "bcheck-eks-cluster-mesh-fargate" on EKS cluster "bcheck-eks-cluster"
+2021-10-18 15:30:48 [ℹ]  created Fargate profile "bcheck-eks-cluster-mesh-fargate" on EKS cluster "bcheck-eks-cluster"
+```
+Enable IAM OIDC provider
+```shell
+histui-MacBookPro:DevWorkspace hist$ eksctl utils associate-iam-oidc-provider --region=ap-northeast-2 --cluster=bcheck-eks-cluster --approve
+2021-10-18 09:40:37 [ℹ]  eksctl version 0.69.0
+2021-10-18 09:40:37 [ℹ]  using region ap-northeast-2
+2021-10-18 09:40:38 [ℹ]  IAM Open ID Connect provider is already associated with cluster "bcheck-eks-cluster" in "ap-northeast-2"
+```
+Download the IAM policy for AWS App Mesh Kubernetes Controller
+```shell
+histui-MacBookPro:src hist$ curl -o controller-iam-policy.json https://raw.githubusercontent.com/aws/aws-app-mesh-controller-for-k8s/master/config/iam/controller-iam-policy.json
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  2753  100  2753    0     0   4146      0 --:--:-- --:--:-- --:--:--  4139
+```
+```shell
+histui-MacBookPro:aws-app-mesh-examples hist$ aws iam create-policy --policy-name AWSAppMeshK8sControllerIAMPolicy --policy-document file://controller-iam-policy.json
+{
+    "Policy": {
+        "PolicyName": "AWSAppMeshK8sControllerIAMPolicy",
+        "PolicyId": "ANPASKUG7WAMROSQPRCUI",
+        "Arn": "arn:aws:iam::160270626841:policy/AWSAppMeshK8sControllerIAMPolicy",
+        "Path": "/",
+        "DefaultVersionId": "v1",
+        "AttachmentCount": 0,
+        "PermissionsBoundaryUsageCount": 0,
+        "IsAttachable": true,
+        "CreateDate": "2021-10-15T08:19:44+00:00",
+        "UpdateDate": "2021-10-15T08:19:44+00:00"
+    }
+}
+histui-MacBookPro:aws-app-mesh-examples hist$ eksctl create iamserviceaccount --cluster bcheck-eks-cluster \
+       --namespace bcheck-mesh-ns \
+       --name appmesh-fargate \
+       --attach-policy-arn arn:aws:iam::160270626841:policy/AWSAppMeshK8sControllerIAMPolicy \
+       --override-existing-serviceaccounts \
+       --approve
+```       
+#### App Mesh 구성요소 생성 
+실제 서비스들을 추상화 하는 mesh 구성요소 (virtual node, virtual service, virtual router 등)를 생성한다.    
+##### bcheck-api 서비스 추상화
+bcheck-api 서비스에 대한 논리적 포인터인 가상 노드 (port 7777) 및 가상 서비스 (Virtual Service)를 생성하여 연결한다.    
+appmesh-bcheck-mesh-ns-api.yaml   
+```yaml
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: bcheck-api-server
+  namespace: bcheck-mesh-ns
+spec:
+  awsName: bcheck-api-server-virtual-node
+  podSelector:
+    matchLabels:
+      app: bcheck-api-server
+  listeners:
+    - portMapping:
+        port: 7777
+        protocol: tcp
+  serviceDiscovery:
+    dns:
+      hostname: bcheck-api-server.bcheck-mesh-ns.svc.cluster.local
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualService
+metadata:
+  name: bcheck-api-server
+  namespace: bcheck-mesh-ns
+spec:
+  awsName: bcheck-api-server
+  provider:
+    virtualNode:
+      virtualNodeRef:
+        name: bcheck-api-server
+```
+##### bcheck-auth 서비스 추상화
+bcheck-auth 서비스에 대한 논리적 포인터인 가상 노드 (port 7070) 및 가상 서비스 (Virtual Service)를 생성하여 연결한다.    
+appmesh-bcheck-mesh-ns-auth.yaml
+```yaml
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: bcheck-auth-server
+  namespace: bcheck-mesh-ns
+spec:
+  awsName: bcheck-auth-server-virtual-node
+  podSelector:
+    matchLabels:
+      app: bcheck-auth-server
+  listeners:
+    - portMapping:
+        port: 7070
+        protocol: tcp
+  serviceDiscovery:
+    dns:
+      hostname: bcheck-auth-server.bcheck-mesh-ns.svc.cluster.local
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualService
+metadata:
+  name: bcheck-auth-server
+  namespace: bcheck-mesh-ns
+spec:
+  awsName: bcheck-auth-server
+  provider:
+    virtualNode:
+      virtualNodeRef:
+        name: bcheck-auth-server
+```
+##### bcheck-gateway-ns 서비스 추상화
+bcheck-gateway는 bcheck-api, bcheck-auth를 호출하는 gateway 역할을 한다. 따라서 서버 추상화 작업 시 
+가상 노드 (port 8080)와 가상 서비스를 생성하고 추가로 가상 라우터도 생성한다. 
+```yaml
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: bcheck-gatewayserver
+  namespace: bcheck-mesh-ns
+spec:
+  awsName: bcheck-gatewayserver-virtual-node
+  podSelector:
+    matchLabels:
+      app: bcheck-gatewayserver
+  listeners:
+    - portMapping:
+        port: 8080
+        protocol: http
+  serviceDiscovery:
+    dns:
+      hostname: bcheck-gatewayserver.bcheck-mesh-ns.svc.cluster.local
+  backends:
+    - virtualService:
+        virtualServiceRef:
+          name: bcheck-auth-server
+    - virtualService:
+        virtualServiceRef:
+          name: bcheck-api-server
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualRouter
+metadata:
+  namespace: bcheck-mesh-ns
+  name: bcheck-gatewayserver
+spec:
+  awsName: bcheck-gatewayserver-virtual-router
+  listeners:
+    - portMapping:
+        port: 8080
+        protocol: http
+  routes:
+    - name: route-to-bcheck-gatewayserver
+      httpRoute:
+        match:
+          prefix: /
+        action:
+          weightedTargets:
+            - virtualNodeRef:
+                name: bcheck-gatewayserver
+              weight: 1
+        retryPolicy:
+          maxRetries: 2
+          perRetryTimeout:
+            unit: ms
+            value: 2000
+          httpRetryEvents:
+            - server-error
+            - client-error
+            - gateway-error
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualService
+metadata:
+  name: bcheck-gatewayserver
+  namespace: bcheck-mesh-ns
+spec:
+  awsName: bcheck-gatewayserver
+  provider:
+    virtualRouter:
+      virtualRouterRef:
+        name: bcheck-gatewayserver
 ```

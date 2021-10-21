@@ -1,0 +1,31 @@
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualGateway
+metadata:
+  name: ingress-gw
+  namespace: bcheck-mesh-ns
+spec:
+  namespaceSelector:
+    matchLabels:
+      gateway: ingress-gw
+  podSelector:
+    matchLabels:
+      app: bcheck-gateway
+  listeners:
+    - portMapping:
+        port: 8000
+        protocol: http
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: GatewayRoute
+metadata:
+  name: bcheck-gatewayroute
+  namespace: bcheck-mesh-ns
+spec:
+  httpRoute:
+    match:
+      prefix: "/"
+    action:
+      target:
+        virtualService:
+          virtualServiceRef:
+            name: bcheck-gatewayserver

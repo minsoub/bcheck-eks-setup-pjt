@@ -1,0 +1,29 @@
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: bcheck-auth-server
+  namespace: bcheck-mesh-ns
+spec:
+  awsName: bcheck-auth-server-virtual-node
+  podSelector:
+    matchLabels:
+      app: bcheck-auth-server
+  listeners:
+    - portMapping:
+        port: 7070
+        protocol: tcp
+  serviceDiscovery:
+    dns:
+      hostname: bcheck-auth-server.bcheck-mesh-ns.svc.cluster.local
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualService
+metadata:
+  name: bcheck-auth-server
+  namespace: bcheck-mesh-ns
+spec:
+  awsName: bcheck-auth-server
+  provider:
+    virtualNode:
+      virtualNodeRef:
+        name: bcheck-auth-server

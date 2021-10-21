@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: bcheck-mesh-ns
+  labels:
+    mesh: bcheck-mesh
+    gateway: ingress-gw
+    appmesh.k8s.aws/sidecarInjectorWebhook: enabled
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: Mesh
+metadata:
+  name: bcheck-mesh
+spec:
+  namespaceSelector:
+    matchLabels:
+      mesh: bcheck-mesh
