@@ -2479,3 +2479,27 @@ spec:
       virtualRouterRef:
         name: bcheck-gatewayserver
 ```
+
+
+
+
+### AWS X-Ray 적용
+- IAM 정책 적용 
+```shell
+$ AUTOSCALING_GROUP =$(aws eks describe-nodegroup --cluster-name bcheck-app-mesh-cluster --nodegroup-name bcheck-nodegroup | jq -r '.nodegroup.resources.autoScalingGroups[0].name')
+$ ROLE_NAME=$(aws iam get-instance-profile --instance-profile-name $AUTOSCALING_GROUP | jq -r '.InstanceProfile.Roles[] | .RoleName')
+$ aws iam attach-role-policy \
+      --role-name $ROLE_NAME \
+      --policy arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess 
+```
+- App Mesh data plane의 X-Ray tracing 활성화
+```shell
+ $ helm upgrade -i appmesh-controller eks/appmesh-controller \
+    --namespace appmesh-system \
+    --set tracing.enabled=true \
+    --set tracing.provider=x-ray
+```
+- Pod 재시작하여 x-ray daemon 주입
+```shell
+ $kubectl rollout restart deployment -n bcheck-mesh-ns
+```
