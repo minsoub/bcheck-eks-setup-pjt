@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: bcheck-mesh-ns
+  name: bcheck-auth-server
+  labels:
+    app: bcheck-auth-server
+spec:
+  type: ClusterIP
+  ports:
+    - port: 7070
+  selector:
+    app: bcheck-auth-server
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: bcheck-mesh-ns
+  name: bcheck-auth-server
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: bcheck-auth-server
+  template:
+    metadata:
+      labels:
+        app: bcheck-auth-server
+    spec:
+      serviceAccountName: bcheck-service
+      containers:
+        - name: bcheck-auth
+          image: 160270626841.dkr.ecr.ap-northeast-2.amazonaws.com/bcheck-auth:latest
+          ports:
+            - containerPort: 7070
+          resources:
+            requests:
+              memory: "1024Mi"
+              cpu: "512m"
+            limits:
+              memory: "4098Mi"
+              cpu: "1024m"
+          readinessProbe:
+            httpGet:
+              path: /api
+              port: 7070
+            initialDelaySeconds: 30
+            periodSeconds: 10
+---

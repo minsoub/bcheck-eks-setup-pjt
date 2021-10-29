@@ -2289,6 +2289,10 @@ kube-node-lease   Active   52d     kubernetes.io/metadata.name=kube-node-lease
 kube-public       Active   52d     kubernetes.io/metadata.name=kube-public
 kube-system       Active   52d     kubernetes.io/metadata.name=kube-system
 ```
+생성된 Mesh 확인
+```shell
+histui-MacBookPro:app-mesh hist$ kubectl describe mesh bcheck-mesh -n bcheck-mesh-ns
+```
 #### bcheck-mesh-ns 네임스페이스의 Fargateprofile 생성 
 appmesh-system 네임스페이스 내의 fargateprofile  생성
 ```shell
@@ -2486,16 +2490,31 @@ spec:
 ### AWS X-Ray 적용
 - IAM 정책 적용 
 ```shell
-$ AUTOSCALING_GROUP =$(aws eks describe-nodegroup --cluster-name bcheck-app-mesh-cluster --nodegroup-name bcheck-nodegroup | jq -r '.nodegroup.resources.autoScalingGroups[0].name')
-$ ROLE_NAME=$(aws iam get-instance-profile --instance-profile-name $AUTOSCALING_GROUP | jq -r '.InstanceProfile.Roles[] | .RoleName')
+$ export AUTOSCALING_GROUP=$(aws eks describe-nodegroup --cluster-name bcheck-app-mesh-cluster --nodegroup-name bcheck-nodegroup | jq -r '.nodegroup.resources.autoScalingGroups[0].name')
+$ echo $AUTOSCALING_GROUP
+eks-bcheck-nodegroup-2ebe504d-fba2-4e56-f020-8c9c13d18b19
+$ export ROLE_NAME=$(aws iam get-instance-profile --instance-profile-name $AUTOSCALING_GROUP | jq -r '.InstanceProfile.Roles[] | .RoleName')
 $ aws iam attach-role-policy \
       --role-name $ROLE_NAME \
       --policy arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess 
+```
+위의 명령으로 instance-profile-name을 찾을 수 없다고 나의 경우는 발생되었다.  원인은 찾지 못했으나 우선적으로 bcheck-nodegroup 콘솔에서    
+세부 정보의 Auto Scaling 그룹 이름 아래 노드 IAM 역할 ARN이 있다. 해당 ARN을 복사해서 위의 attach-role-policy를 수정해서 실행한다.    
+기존에 존재한 appmesh-controller로 인해 업데이터가 안되는 현상이 있어 기존 appmesh-controller를 삭제하고 다시 생성함.
+```shell
+histui-MacBookPro:app-mesh hist$ helm delete appmesh-controller -n appmesh-system
+release "appmesh-controller" uninstalled
 ```
 - App Mesh data plane의 X-Ray tracing 활성화
 ```shell
  $ helm upgrade -i appmesh-controller eks/appmesh-controller \
     --namespace appmesh-system \
+    --set region=ap-northeast-2 \
+    --set serviceAccount.create=false \
+    --set serviceAccount.name=appmesh-controller \
+    --set app.kubernetes.io/managed-by=Helm \
+    --set meta.helm.sh/release-namespace=appmesh-system \
+    --set meta.helm.sh/release-name=appmesh-controller \
     --set tracing.enabled=true \
     --set tracing.provider=x-ray
 ```
@@ -2503,3 +2522,5 @@ $ aws iam attach-role-policy \
 ```shell
  $kubectl rollout restart deployment -n bcheck-mesh-ns
 ```
+로그 확인시 권한 문제로 xray로 데이터를 전송 못해서 에러가 발생한다. 해당 에러가 발생할 경우 컨테이너에서 xray-daemon의 Role을 확인해서 권한을 추가하고   
+위와 같이 Pod를 재시작하면 접속이 될 것이다. 

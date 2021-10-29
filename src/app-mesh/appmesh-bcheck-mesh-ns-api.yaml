@@ -11,10 +11,41 @@ spec:
   listeners:
     - portMapping:
         port: 7777
-        protocol: tcp
+        protocol: http
   serviceDiscovery:
     dns:
       hostname: bcheck-api-server.bcheck-mesh-ns.svc.cluster.local
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualRouter
+metadata:
+  namespace: bcheck-mesh-ns
+  name: bcheck-api-server
+spec:
+  awsName: bcheck-apiserver-virtual-router
+  listeners:
+    - portMapping:
+        port: 7777
+        protocol: http
+  routes:
+    - name: route-to-bcheck-apiserver
+      httpRoute:
+        match:
+          prefix: /
+        action:
+          weightedTargets:
+            - virtualNodeRef:
+                name: bcheck-api-server
+              weight: 1
+        retryPolicy:
+          maxRetries: 2
+          perRetryTimeout:
+            unit: ms
+            value: 2000
+          httpRetryEvents:
+            - server-error
+            - client-error
+            - gateway-error
 ---
 apiVersion: appmesh.k8s.aws/v1beta2
 kind: VirtualService
@@ -22,8 +53,8 @@ metadata:
   name: bcheck-api-server
   namespace: bcheck-mesh-ns
 spec:
-  awsName: bcheck-api-server
+  awsName: bcheck-api-server.bcheck-mesh-ns.svc.cluster.local
   provider:
-    virtualNode:
-      virtualNodeRef:
+    virtualRouter:
+      virtualRouterRef:
         name: bcheck-api-server

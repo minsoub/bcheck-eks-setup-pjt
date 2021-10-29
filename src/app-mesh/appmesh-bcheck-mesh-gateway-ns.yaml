@@ -4,7 +4,6 @@ metadata:
   name: bcheck-gatewayserver
   namespace: bcheck-mesh-ns
 spec:
-  awsName: bcheck-gatewayserver-virtual-node
   podSelector:
     matchLabels:
       app: bcheck-gatewayserver
@@ -29,7 +28,6 @@ metadata:
   namespace: bcheck-mesh-ns
   name: bcheck-gatewayserver
 spec:
-  awsName: bcheck-gatewayserver-virtual-router
   listeners:
     - portMapping:
         port: 8000
@@ -60,7 +58,7 @@ metadata:
   name: bcheck-gatewayserver
   namespace: bcheck-mesh-ns
 spec:
-  awsName: bcheck-gatewayserver
+  awsName: bcheck-gatewayserver.bcheck-mesh-ns.svc.cluster.local
   provider:
     virtualRouter:
       virtualRouterRef:
