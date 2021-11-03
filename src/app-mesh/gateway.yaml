@@ -1,12 +1,12 @@
 apiVersion: appmesh.k8s.aws/v1beta2
 kind: VirtualGateway
 metadata:
-  name: ingress-gw
+  name: bcheck-gateway
   namespace: bcheck-mesh-ns
 spec:
   namespaceSelector:
     matchLabels:
-      gateway: ingress-gw
+      gateway: bcheck-gateway
   podSelector:
     matchLabels:
       app: bcheck-gateway

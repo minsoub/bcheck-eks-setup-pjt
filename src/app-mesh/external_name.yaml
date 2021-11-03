@@ -1,0 +1,12 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: my-service
+  namespace: bcheck-mesh-ns
+  labels:
+    app: my-service
+spec:
+  type: ExternalName
+  externalName: bcheck-docdb.cluster-cfe0kcb9osrg.ap-northeast-2.docdb.amazonaws.com
+  selector:
+    app: my-service

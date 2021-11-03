@@ -29,7 +29,7 @@ spec:
       labels:
         app: bcheck-gateway
     spec:
-      serviceAccountName: bcheck-service
+      serviceAccountName: bcheck-mesh-ns-service
       containers:
         - name: envoy
           image: 840364872350.dkr.ecr.ap-southeast-1.amazonaws.com/aws-appmesh-envoy:v1.15.0.0-prod

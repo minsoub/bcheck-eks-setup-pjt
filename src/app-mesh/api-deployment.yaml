@@ -27,7 +27,7 @@ spec:
       labels:
         app: bcheck-api-server
     spec:
-      serviceAccountName: bcheck-service
+      serviceAccountName: bcheck-mesh-ns-service
       containers:
         - name: bcheck-api
           image: 160270626841.dkr.ecr.ap-northeast-2.amazonaws.com/bcheck-api:latest

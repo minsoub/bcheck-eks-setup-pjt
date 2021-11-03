@@ -4,7 +4,7 @@ metadata:
   name: bcheck-mesh-ns
   labels:
     mesh: bcheck-mesh
-    gateway: ingress-gw
+    gateway: bcheck-gateway
     appmesh.k8s.aws/sidecarInjectorWebhook: enabled
 ---
 apiVersion: appmesh.k8s.aws/v1beta2
@@ -15,3 +15,5 @@ spec:
   namespaceSelector:
     matchLabels:
       mesh: bcheck-mesh
+  egresFilter:
+    type: ALLOW_ALL

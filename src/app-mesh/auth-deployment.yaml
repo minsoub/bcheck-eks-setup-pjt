@@ -27,7 +27,7 @@ spec:
       labels:
         app: bcheck-auth-server
     spec:
-      serviceAccountName: bcheck-service
+      serviceAccountName: bcheck-mesh-ns-service
       containers:
         - name: bcheck-auth
           image: 160270626841.dkr.ecr.ap-northeast-2.amazonaws.com/bcheck-auth:latest
@@ -42,7 +42,7 @@ spec:
               cpu: "1024m"
           readinessProbe:
             httpGet:
-              path: /api
+              path: /api/api-docs
               port: 7070
             initialDelaySeconds: 30
             periodSeconds: 10

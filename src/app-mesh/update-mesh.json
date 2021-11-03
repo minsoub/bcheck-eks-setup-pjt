@@ -1,0 +1,8 @@
+{
+  "meshName": "bcheck-mesh",
+  "spec": {
+    "egressFilter": {
+      "type": "ALLOW_ALL"
+    }
+  }
+}

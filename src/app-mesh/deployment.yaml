@@ -27,7 +27,7 @@ spec:
       labels:
         app: bcheck-gatewayserver
     spec:
-      serviceAccountName: bcheck-service
+      serviceAccountName: bcheck-mesh-ns-service
       containers:
         - name: bcheck-gateway-ts
           image: 160270626841.dkr.ecr.ap-northeast-2.amazonaws.com/bcheck-gateway-ts:latest
