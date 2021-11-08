@@ -2310,9 +2310,15 @@ kubernetes-dashboard   Active   18h   kubernetes.io/metadata.name=kubernetes-das
 histui-MacBookPro:aws-app-mesh-examples hist$ eksctl create iamserviceaccount --cluster bcheck-app-mesh-cluster \
        --namespace bcheck-mesh-ns \
        --name bcheck-mesh-ns-service \
-       --attach-policy-arn arn:aws:iam::aws:policy/AWSCloudMapFullAccess,arn:aws:iam::aws:policy/AWSAppMeshFullAccess,arn:aws:iam::aws:policy/AWSAppMeshEnvoyAccess \
+       --attach-policy-arn arn:aws:iam::aws:policy/AWSCloudMapFullAccess,arn:aws:iam::aws:policy/AWSAppMeshFullAccess,arn:aws:iam::aws:policy/AWSAppMeshEnvoyAccess,arn:aws:iam::aws:policy/AWSXrayFullAccess \
        --override-existing-serviceaccounts \
        --approve
+       
+eksctl update iamserviceaccount --cluster bcheck-app-mesh-cluster \
+       --namespace bcheck-mesh-ns \
+       --name bcheck-mesh-ns-service \
+       --attach-policy-arn arn:aws:iam::aws:policy/AWSCloudMapFullAccess,arn:aws:iam::aws:policy/AWSAppMeshFullAccess,arn:aws:iam::aws:policy/AWSAppMeshEnvoyAccess,arn:aws:iam::aws:policy/AWSXrayFullAccess \
+       --approve       
 ```
 - 가상 게이트웨이 생성
 ```yaml
@@ -2655,7 +2661,22 @@ release "appmesh-controller" uninstalled
                  "ecr:CompletedLayerUpload"
               ],
               "Resource": "*"
-          }
+          },
+         {
+              "Sid": "VisualEditor1",
+              "Effect": "Allow",
+              "Action": [
+                 "eks:DescribeNodegroup",
+                 "eks:DescribeUpdate",
+                 "eks:DescribeCluster"
+              ],
+              "Resource": [
+                 "arn:aws:eks:*:160270626841:addon/*/*/*",
+                 "arn:aws:eks:*:160270626841:nodegroup/*/*/*",
+                 "arn:aws:eks:*:160270626841:cluster/*",
+                 "arn:aws:ecr:*:160270626841:repository/*"
+              ]
+         }    
        ]
     }
     ```
