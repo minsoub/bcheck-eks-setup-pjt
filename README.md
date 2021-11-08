@@ -2306,6 +2306,8 @@ kube-system            Active   12d   kubernetes.io/metadata.name=kube-system
 kubernetes-dashboard   Active   18h   kubernetes.io/metadata.name=kubernetes-dashboard
 ```
 - 서비스 계정 생성 
+아래 서비스 계정은 Pod가 실행될 때 권한도 포함된다. 따라서 Pod의 실행에 필요한 권한이 무엇인지도 파악해야 한다.    
+Pod에 컨테이너가 배포될 때 Envoy와 X-ray daemon이 자동으로 배포되고 또한 X-ray daemon에서는 X-ray Full Access 권한이 있어야 한다.    
 ```shell
 histui-MacBookPro:aws-app-mesh-examples hist$ eksctl create iamserviceaccount --cluster bcheck-app-mesh-cluster \
        --namespace bcheck-mesh-ns \
@@ -2581,8 +2583,10 @@ kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | gre
 - 접속 URL
 위의 명령으로 나온 토큰을 카피해서 접속한다.    
 ```shell
-http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/#!/login
+kubectl proxy
 ```
+브라우저에서 아래 URL을 입력하고 위에서 나온 토큰을 카피해서 토큰으로 인증한다.    
+http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/#!/login
 
 - API Test
 ```shell
@@ -2637,7 +2641,7 @@ release "appmesh-controller" uninstalled
  deployment.apps/bcheck-gatewayserver restarted
 ```
 로그 확인시 권한 문제로 xray로 데이터를 전송 못해서 에러가 발생한다. 해당 에러가 발생할 경우 컨테이너에서 xray-daemon의 Role을 확인해서 권한을 추가하고   
-위와 같이 Pod를 재시작하면 접속이 될 것이다.
+위와 같이 Pod를 재시작하면 접속이 될 것이다. x-ray 권한을 IamServiceAccount의 계정에 AWSXrayFullAccess 권한을 부여해야 한다.   
 
 ### EKS Cluster Deploy
 - CodeBuild 프로젝트 생성시 EKS Cluster와 같은 VPC를 연결해야 한다.
