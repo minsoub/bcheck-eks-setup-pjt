@@ -2323,6 +2323,10 @@ eksctl update iamserviceaccount --cluster bcheck-app-mesh-cluster \
        --approve       
 ```
 - 가상 게이트웨이 생성
+VirtaulGateway와 GatewayRoute 연결을 위해서 VirtualGateway에서 gatewayRouteSelector를 사용한다.   
+gatewayRouteSelector에서 matchLabels의 gateway를 선언하면 GatewayRoute의 labels에서 gateway 태그를 찾는다.   
+가상 게이트웨이의 podSelector에서의 bcheck-gateway는 LoadBalancer의 Service 네임과 일치시켜야 한다.   
+또한 VirtualNode의 podSelector의 경우는 어플리케이션의 Service 네임과 일치시켜야 한다.   
 ```yaml
 apiVersion: appmesh.k8s.aws/v1beta2
 kind: VirtualGateway
@@ -2336,6 +2340,9 @@ spec:
   podSelector:
     matchLabels:
       app: bcheck-gateway
+  gatewayRouteSelector:
+    matchLabels:
+      gateway: bcheck-gatewayroute      
   listeners:
     - portMapping:
         port: 8000
@@ -2346,6 +2353,8 @@ kind: GatewayRoute
 metadata:
   name: bcheck-gatewayroute
   namespace: bcheck-mesh-ns
+  labels:
+    gateway: bcheck-gatewayroute  
 spec:
   httpRoute:
     match:
@@ -2633,7 +2642,36 @@ release "appmesh-controller" uninstalled
     --set meta.helm.sh/release-name=appmesh-controller \
     --set tracing.enabled=true \
     --set tracing.provider=x-ray
+    
+ $ helm upgrade -i appmesh-controller eks/appmesh-controller \
+    --namespace appmesh-system \
+    --set region=ap-northeast-2 \
+    --set serviceAccount.create=false \
+    --set serviceAccount.name=appmesh-controller \
+    --set app.kubernetes.io/managed-by=Helm \
+    --set meta.helm.sh/release-namespace=appmesh-system \
+    --set meta.helm.sh/release-name=appmesh-controller \
+    --set mesh.egressFilter=ALLOW_ALL \
+    --set tracing.enabled=true \
+    --set tracing.provider=x-ray    
 ```
+- App mesh에서의 송신 필터 허용을 위해서 appmesh-controller에서 적용했지만 적용이 안되어 아래 명러어를 통해서 적용한다.
+- 편집을 통해서 egressFilter를 추가한다.
+```shell
+kubectl describe mesh bcheck-mesh
+kubectl edit mesh bcheck-mesh -o yaml
+```
+```yaml
+spec:
+  awsName: bcheck-mesh
+  egressFilter:
+     type: ALLOW_ALL
+  namespaceSelector:
+     matchLabels:
+        mesh: bcheck-mesh
+```
+
+
 - Pod 재시작하여 x-ray daemon 주입
 ```shell
  histui-MacBookPro:app-mesh hist$ kubectl rollout restart deployment -n bcheck-mesh-ns

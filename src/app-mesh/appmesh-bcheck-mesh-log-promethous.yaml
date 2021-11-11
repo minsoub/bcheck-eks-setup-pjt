@@ -1,0 +1,97 @@
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: bcheck-prometheous-logserver
+  namespace: bcheck-mesh-ns
+spec:
+  awsName: bcheck-prometheous-logserver-virtual-node
+  podSelector:
+    matchLabels:
+      app: bcheck-prometheous-logserver
+  listeners:
+    - portMapping:
+        port: 9090
+        protocol: http
+  serviceDiscovery:
+    dns:
+      hostname: bcheck-prometheous-logserver.bcheck-mesh-ns.svc.cluster.local
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualRouter
+metadata:
+  namespace: bcheck-mesh-ns
+  name: bcheck-prometheous-logserver
+spec:
+  listeners:
+    - portMapping:
+        port: 9090
+        protocol: http
+  routes:
+    - name: route-to-bcheck-prometheous-logserver
+      httpRoute:
+        match:
+          prefix: /
+        action:
+          weightedTargets:
+            - virtualNodeRef:
+                name: bcheck-prometheous-logserver
+              weight: 1
+        retryPolicy:
+          maxRetries: 2
+          perRetryTimeout:
+            unit: ms
+            value: 2000
+          httpRetryEvents:
+            - server-error
+            - client-error
+            - gateway-error
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualService
+metadata:
+  name: bcheck-prometheous-logserver
+  namespace: bcheck-mesh-ns
+spec:
+  awsName: bcheck-prometheous-logserver.bcheck-mesh-ns.svc.cluster.local
+  provider:
+    virtualRouter:
+      virtualRouterRef:
+        name: bcheck-prometheous-logserver
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualGateway
+metadata:
+  name: bcheck-prometheous-gateway
+  namespace: bcheck-mesh-ns
+spec:
+  namespaceSelector:
+    matchLabels:
+      gateway: bcheck-gateway
+  podSelector:
+    matchLabels:
+      app: bcheck-prometheous-log-lb
+  gatewayRouteSelector:
+    matchLabels:
+      gateway: bcheck-prometheous-gatewayroute
+  listeners:
+    - portMapping:
+        port: 9090
+        protocol: http
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: GatewayRoute
+metadata:
+  name: bcheck-prometheous-gatewayroute
+  namespace: bcheck-mesh-ns
+  labels:
+    gateway: bcheck-prometheous-gatewayroute
+spec:
+  httpRoute:
+    match:
+      prefix: "/"
+    action:
+      target:
+        virtualService:
+          virtualServiceRef:
+            name: bcheck-prometheous-logserver
+---

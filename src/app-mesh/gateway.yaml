@@ -10,6 +10,9 @@ spec:
   podSelector:
     matchLabels:
       app: bcheck-gateway
+  gatewayRouteSelector:
+    matchLabels:
+      gateway: bcheck-gatewayroute
   listeners:
     - portMapping:
         port: 8000
@@ -20,6 +23,8 @@ kind: GatewayRoute
 metadata:
   name: bcheck-gatewayroute
   namespace: bcheck-mesh-ns
+  labels:
+    gateway: bcheck-gatewayroute
 spec:
   httpRoute:
     match:

@@ -1,0 +1,97 @@
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: bcheck-grafana-logserver
+  namespace: bcheck-mesh-ns
+spec:
+  awsName: bcheck-grafana-logserver-virtual-node
+  podSelector:
+    matchLabels:
+      app: bcheck-grafana-logserver
+  listeners:
+    - portMapping:
+        port: 3000
+        protocol: http
+  serviceDiscovery:
+    dns:
+      hostname: bcheck-grafana-logserver.bcheck-mesh-ns.svc.cluster.local
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualRouter
+metadata:
+  namespace: bcheck-mesh-ns
+  name: bcheck-grafana-logserver
+spec:
+  listeners:
+    - portMapping:
+        port: 3000
+        protocol: http
+  routes:
+    - name: route-to-bcheck-grafana-logserver
+      httpRoute:
+        match:
+          prefix: /
+        action:
+          weightedTargets:
+            - virtualNodeRef:
+                name: bcheck-grafana-logserver
+              weight: 1
+        retryPolicy:
+          maxRetries: 2
+          perRetryTimeout:
+            unit: ms
+            value: 2000
+          httpRetryEvents:
+            - server-error
+            - client-error
+            - gateway-error
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualService
+metadata:
+  name: bcheck-grafana-logserver
+  namespace: bcheck-mesh-ns
+spec:
+  awsName: bcheck-grafana-logserver.bcheck-mesh-ns.svc.cluster.local
+  provider:
+    virtualRouter:
+      virtualRouterRef:
+        name: bcheck-grafana-logserver
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualGateway
+metadata:
+  name: bcheck-grafana-gateway
+  namespace: bcheck-mesh-ns
+spec:
+  namespaceSelector:
+    matchLabels:
+      gateway: bcheck-gateway
+  podSelector:
+    matchLabels:
+      app: bcheck-grafana-log-lb
+  gatewayRouteSelector:
+    matchLabels:
+      gateway: bcheck-grafana-gatewayroute
+  listeners:
+    - portMapping:
+        port: 3000
+        protocol: http
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: GatewayRoute
+metadata:
+  name: bcheck-grafana-gatewayroute
+  namespace: bcheck-mesh-ns
+  labels:
+    gateway: bcheck-grafana-gatewayroute
+spec:
+  httpRoute:
+    match:
+      prefix: "/"
+    action:
+      target:
+        virtualService:
+          virtualServiceRef:
+            name: bcheck-grafana-logserver
+---

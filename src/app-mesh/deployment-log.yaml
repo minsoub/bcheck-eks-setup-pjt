@@ -1,0 +1,71 @@
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: bcheck-mesh-ns
+  name: bcheck-logserver
+  labels:
+    app: bcheck-logserver
+spec:
+  type: ClusterIP
+  ports:
+    - name: grafana
+      port: 3000
+      targetPort: 3000
+    - name: promethous
+      port: 9090
+      targetPort: 9090
+  selector:
+    app: bcheck-logserver
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: bcheck-mesh-ns
+  name: bcheck-logserver
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: bcheck-logserver
+  template:
+    metadata:
+      labels:
+        app: bcheck-logserver
+    spec:
+      serviceAccountName: bcheck-mesh-ns-service
+      containers:
+        - name: bcheck-grafana-log
+          image: 160270626841.dkr.ecr.ap-northeast-2.amazonaws.com/bcheck-mesh-grafana:latest
+          ports:
+            - containerPort: 3000
+          resources:
+            requests:
+              memory: "1024Mi"
+              cpu: "512m"
+            limits:
+              memory: "4098Mi"
+              cpu: "1024m"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+        - name: bcheck-promethous-log
+          image: 160270626841.dkr.ecr.ap-northeast-2.amazonaws.com/bcheck-mesh-prometheus:latest
+          ports:
+            - containerPort: 9090
+          resources:
+            requests:
+              memory: "1024Mi"
+              cpu: "512m"
+            limits:
+              memory: "4098Mi"
+              cpu: "1024m"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 9090
+            initialDelaySeconds: 30
+            periodSeconds: 10
+---
