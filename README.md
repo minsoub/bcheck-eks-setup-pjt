@@ -2090,6 +2090,7 @@ secret_key     ****************Orvs shared-credentials-file
 
 
 ### APP Mesh 적용 
+![APP Mesh 구성](images/app_mesh.jpeg)
 - Cloudformation을 통한 VPC 및 네트워크 구성 
   vpc_infra.yaml
 - App Mesh 설치 가능 여부 검증
